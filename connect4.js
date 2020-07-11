@@ -8,10 +8,12 @@
 //do we add x and y as instance variables??
 class Game {
   constructor(width, height, currPlayer, board){
-    this.width = 7;
-    this.height = 6;
+    this.width = width || 7;
+    this.height = height || 6;
     this.currPlayer = 1;
     this.board = [];
+    this.makeBoard();
+    this.makeHtmlBoard();
   }
 /** makeBoard: create in-JS board structure:
  *   board = array of rows, each row is array of cells  (board[y][x])
@@ -28,7 +30,8 @@ class Game {
     // make column tops (clickable area for adding a piece to that column)
     const top = document.createElement('tr');
     top.setAttribute('id', 'column-top');
-    top.addEventListener('click', this.handleClick);
+    const handleClickCalledOnMe = this.handleClick.bind(this);
+    top.addEventListener('click', handleClickCalledOnMe);
   
     for (let x = 0; x < this.width; x++) {
       const headCell = document.createElement('td');
@@ -86,6 +89,7 @@ handleClick(evt) {
   const x = +evt.target.id;
 
   // get next spot in column (if none, ignore click)
+  // console.log('value of this', this);
   const y = this.findSpotForCol(x);
   if (y === null) {
     return;
@@ -93,10 +97,12 @@ handleClick(evt) {
 
   // place piece in board and add to HTML table
   this.board[y][x] = this.currPlayer;
-  placeInTable(y, x);
+  console.log('value of this', this);
+  this.placeInTable(y, x);
   
   // check for win
-  if (checkForWin()) {
+  // console.log('handle click checkForWin() this value', this);
+  if (this.checkForWin()) {
     return this.endGame(`Player ${this.currPlayer} won!`);
   }
   
@@ -111,12 +117,21 @@ handleClick(evt) {
 
 /** checkForWin: check board cell-by-cell for "does a win start here?" */
 
+// const handleClickCalledOnMe = this.handleClick.bind(this);
+// top.addEventListener('click', handleClickCalledOnMe);
+
+
+// 1 - You can bind
+// 2 - You can use an arrow function
+// 3 - You can create a variable in check for win that is set to the current context, and then use that in underscore win
 checkForWin() {
-  _win(cells) {
+  // let self = this;
+  console.log('check for win this value', this);
+  let _win = (cells) => {
+    // console.log('cells value of this', this);
     // Check four cells to see if they're all color of current player
     //  - cells: list of four (y, x) cells
     //  - returns true if all are legal coordinates & all match currPlayer
-
     return cells.every(
       ([y, x]) =>
         y >= 0 &&
@@ -127,6 +142,7 @@ checkForWin() {
     );
   }
 
+  // let boundWin = _win.bind(this);
   for (let y = 0; y < this.height; y++) {
     for (let x = 0; x < this.width; x++) {
       // get "check list" of 4 cells (starting here) for each of the different
@@ -136,8 +152,11 @@ checkForWin() {
       const diagDR = [[y, x], [y + 1, x + 1], [y + 2, x + 2], [y + 3, x + 3]];
       const diagDL = [[y, x], [y + 1, x - 1], [y + 2, x - 2], [y + 3, x - 3]];
 
-      // find winner (only checking each win-possibility as needed)
-      if (this._win(horiz) || this._win(vert) || this._win(diagDR) || this._win(diagDL)) {
+      // .call(this) works because 'this' is assigned the game class when _win is invoked. It is invoked in the checkForWin function (which was assigned the Game context in the handleClick function)
+      // if (_win(horiz).call(this) || _win(vert) || _win(diagDR) || _win(diagDL)) {
+      //   return true;
+      // }
+      if (_win(horiz) || _win(vert) || _win(diagDR) || _win(diagDL)) {
         return true;
       }
     }
@@ -145,8 +164,7 @@ checkForWin() {
 }
 
 //should we include this on these functions?
-this.makeBoard();
-this.makeHtmlBoard();
+
 
 }
 
